@@ -1,0 +1,150 @@
+import jwt from 'jsonwebtoken';
+import pool from "../model/db.js";
+import bcrypt from 'bcrypt';
+
+const saltRound = 10
+
+// function definitions for certain tasks
+const hashPassword = async (password) => {
+  try{
+    const hash = await bcrypt.hash(password, saltRound);
+    return hash
+  }catch (err){
+    throw err
+  }
+}
+
+const generateJwtToken = async (id, username ) => {
+  try {
+     
+      // const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5min
+      // const expiresInSeconds = Math.floor((expiresAt.getTime() - Date.now()) / 1000); // time in sec
+      const expiresInSeconds = 5 * 60;
+      const expiresAt = new Date((Date.now() + expiresInSeconds * 1000));
+     // jwt.sign(payload, secretkey)
+      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: expiresInSeconds});
+
+      // adding the token to sessions table
+      const insertTokenQuery = "INSERT INTO sessions(user_id, token, expires_at) values($1,$2,$3) RETURNING*";
+     
+      const insertTokenValues = [id, token, expiresAt];
+
+      const tokenInsertResult = await pool.query(insertTokenQuery, insertTokenValues);
+
+      if(tokenInsertResult.rows.length > 0){
+        return { success: true, token : tokenInsertResult.rows[0].token, expiresAt: tokenInsertResult.expiresAt}
+      }
+
+      return {success: false}
+  } catch (error) {
+     throw error
+  }
+}
+
+//
+// Funcition definition for routes
+const register = async (req, res) => {
+  try {
+    
+    const {username, password, email } = req.body;
+
+    // checking if user with the username already exist
+    const checkUserQuery = "SELECT username FROM users WHERE username = ($1)";
+    const checkResults = await pool.query(checkUserQuery, [username]);
+
+    if (checkResults.rows.length > 0){
+      return res.status(409).json({success: false , message: "username already taken"})
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    const query = "INSERT INTO users (username, password_hash, email) VALUES($1,$2,$3) RETURNING*"
+    const values = [username, passwordHash, email]
+
+    
+
+    const results = await pool.query(query, values);
+
+    if (results.rows.length > 0){
+     
+      const id = results.rows[0].id
+
+      // generate token
+      const tokenGeneration = await  generateJwtToken(id, username);
+
+      if (tokenGeneration.success){
+        
+        return res.status(201).json(
+          { 
+            success : true,
+            message: 'Registration sucess',
+             data: results.rows[0],
+             token: tokenGeneration.token ,
+             expiresAt: tokenGeneration.expiresAt }
+        );
+      }
+
+      return res.status(500).json({ success: false, message: "user registered but failed to login"});
+
+    }
+    
+    return res.status(401).json({success: false , message: "Registration failed", data: []})
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error", error: error.message })
+  }
+  
+};
+
+const login = async (req, res)=>{
+  try {
+    const {email, password} = req.body;
+
+    const checkUserQuery = "SELECT * FROM users WHERE email = ($1)";
+    const checkUserResults = await pool.query(checkUserQuery, [email]);
+
+    if (checkUserResults.rows.length > 0){
+      const passwordHash = checkUserResults.rows[0].password_hash;
+      const passwordMatch = await bcrypt.compare(password, passwordHash);
+
+      if (!passwordMatch){
+        return res.status(401).json({message: "incorrect password"})
+      }
+
+      const username = checkUserResults.rows[0].username
+      const id = checkUserResults.rows[0].id
+      
+     /// generate token
+
+     const tokenGeneration = await generateJwtToken(id, username);
+
+      if(tokenGeneration.success){
+         return res.status(200).json(
+          { 
+            success: true,
+            message: 'Registration sucess',
+             data: checkUserResults.rows[0],
+             token: tokenGeneration.token ,
+             expiresAt: tokenGeneration.expiresAt }
+        );
+        
+      }
+
+
+
+      return res.status(401).json({success: false, message: "login failed", data: []})
+    }
+
+    return res.status(404).json({ success: false, message: 'user not found please register first'});
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+  
+};
+
+
+export {
+  register, 
+  login,
+
+};

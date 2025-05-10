@@ -1,0 +1,39 @@
+body{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container{
+    border: 3px solid blue;
+    padding: 20px;
+}
+
+.status-info{
+    border: 1px solid red;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px 0 20px;
+}
+/* playing board */
+.board{
+    height: 90vh;
+    width: 90vmin;
+    background-color: black;
+    display:grid;
+    grid-template-columns: repeat(30,1fr);
+    grid-template-rows: repeat(30,1fr);
+}
+
+/* drawing the snake */
+.snake{
+    border: 1px solid black;
+}
+
+.food{
+    border: 1px solid black;
+    background-color: red;
+}
