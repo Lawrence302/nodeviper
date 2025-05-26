@@ -1,4 +1,6 @@
 
+import { getUserScores, addScore } from "./api_calls.js";
+
 const board = document.querySelector(".board");
 let level = 1;
 let score = 0;
@@ -50,6 +52,13 @@ const checkCollisions = () => {
         snakeBody[0].y < 1 || snakeBody[0].y > 30
     ) {
         alert("Game Over (Wall Collision)");
+        // update score in db
+        // get user scores
+        fetchUserScores(2)
+
+        const userScoreData = {"score": score, "level":level}
+        
+        addUserScore(userScoreData)
         restartGame();
         return;
     }
@@ -205,3 +214,36 @@ setInterval(()=>{
     
   console.log(speed)
 }, speed)
+
+
+// api related function operations
+const fetchUserScores = async (id) => {
+    try {
+        const response = await getUserScores(id);
+        console.log(response.ok)
+        if (!response.ok){
+            console.log(response)
+            return
+        }
+
+        console.log("successfull got scores " , response)
+    } catch (error) {
+        alert(error.message)
+    }
+}
+
+const addUserScore = async (scoreInfo) => {
+    try {
+        const response = await addScore(scoreInfo);
+        if ( !response.ok){
+            console.log(response)
+            return
+        }
+        
+        console.log( "successfully added score ", response)
+        return response
+
+    } catch (error) {
+        alert(error.message)
+    }
+}

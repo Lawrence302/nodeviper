@@ -106,17 +106,23 @@ const addScore = async (req, res) => {
 
 const getUserScores = async (req, res) => {
        try {
-        const user_id = req.user.id
+        const paramId = req.params.userid; // comes from url so its a string
+        const userId = req.user.id // decoded from jwt so its a number
 
-        const getUserScoresQuery = "SELECT * FROM scores WHERE user_id = ($1)";
-        const values = [user_id]
+        if (String(paramId) === String(userId)){
+            const getUserScoresQuery = "SELECT * FROM scores WHERE user_id = ($1)";
+            const values = [userId]
 
-        const userScores = await pool.query(getUserScoresQuery, values)
+            const userScores = await pool.query(getUserScoresQuery, values)
 
-        if ( userScores.rows.length > 0){
-            // console.log(userScores.rows)
-            return res.status(200).json({success: true, message: "retrived user scores", data: [userScores.rows]})
+            if ( userScores.rows.length > 0){
+                // console.log(userScores.rows)
+                return res.status(200).json({success: true, message: "retrived user scores", data: userScores.rows})
+            }
         }
+
+        console.log(paramId,userId)
+ 
 
         return res.status(404).json({ success: false, message: "No user scores found"});
 

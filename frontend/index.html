@@ -4,17 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>snake game</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    
-    <div class="container">
-        <div class="status-info">
-            <div class="score">score: <span id="score-value">9</span></div>
-            <div class="level">Level: <span id="level-value">1</span></div>
+<body class="h-screen">
+    <div class="main-container flex flex-col   border border-red-500 h-screen"> 
+        <nav class=" flex flex-row justify-around m-4">
+            <div class="title">Snake game</div>
+            <div>
+                <ul class="flex justify-around gap-6">
+                    <li class="" id="about">About</li>
+                    <li class="" id="login">Login</li>
+                    <li class="" id="logout">Logout</li>
+                </ul>
+            </div>
+        </nav>
+        <!-- game area -->
+        <div class="game-container  flex flex-col items-center">
+            <div class="status-info min-w-[80vmin] max-w-[90vmin]">
+                <div class="score">score: <span id="score-value">9</span></div>
+                <div class="level">Level: <span id="level-value">1</span></div>
+            </div>
+            <div class="board min-w-[80vmin] max-w-[90vmin] aspect-square"></div>
         </div>
-        <div class="board"></div>
     </div>
-    <script src="./script.js"></script>
+    <script type="module" src="./app.js"></script>
 </body>
 </html>
