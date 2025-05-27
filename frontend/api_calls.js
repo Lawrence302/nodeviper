@@ -1,8 +1,14 @@
 
 const API_BASE = 'http://localhost:3000';
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJqYW1lcyIsImlhdCI6MTc0ODIxMDg2OCwiZXhwIjoxNzQ4MjExMTY4fQ.IDH6Nd0gwmxqSmaoLujy7LUfJ2j8jx_ywt8HOhZupq0"
+
 export async function getUserScores(id){
+
+    const storedUser = JSON.parse(localStorage.getItem('user'))
+    if(!storedUser) return;
+
+    const token = storedUser.token
+
     try {
         const res = await fetch(`${API_BASE}/score/${id}`,{
             method: 'GET',
@@ -30,11 +36,56 @@ export async function getUserScores(id){
     
 }
 
+// get users hightes score
+export async function getUserHighestScore(id){
+
+    const storedUser = JSON.parse(localStorage.getItem('user'))
+
+    if(!storedUser) return;
+
+    const token = storedUser.token
+
+    try {
+        const res = await fetch(`${API_BASE}/score/highest/${id}`,{
+            method: 'GET',
+            headers:{
+                'content-type':'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        // console.log("done here", res)
+
+        // the data is a single value object {"max": value}
+        const data = await res.json()
+        return {
+            status : res.status,
+            ok : res.ok,
+            ...data
+        }
+       
+    } catch (error) {
+       
+        return {
+            sucess: false,
+            message: error.message,
+            error: true
+        }
+    }
+}
+
 // console.log(await getUserScores(2))
 
 
 export async function addScore(scoreInfo){
     console.log("info before adding scores : ", scoreInfo)
+
+    const storedUser = JSON.parse(localStorage.getItem('user'))
+    if(!storedUser) return;
+
+    console.log(storedUser.token , "good")
+    const token = storedUser.token
+
+    console.log("got here to add scores: ", token)
     try {
         const res = await fetch(`${API_BASE}/score/add`,{
             method: 'POST',
@@ -137,9 +188,16 @@ export async function logoutUser(token){
             }
         })
 
-        const data = await res.json()
+        if (!res.ok){
+            return {
+                success: false,
+                ok: false
+            }
+        }
+
 
         return {
+            sucess: true,
             status: res.status,
             ok : res.ok
         }

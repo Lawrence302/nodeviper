@@ -19,7 +19,7 @@ const generateJwtToken = async (id, username ) => {
      
       // const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5min
       // const expiresInSeconds = Math.floor((expiresAt.getTime() - Date.now()) / 1000); // time in sec
-      const expiresInSeconds = 5 * 60;
+      const expiresInSeconds = 10 * 60;
       const expiresAt = new Date((Date.now() + expiresInSeconds * 1000));
      // jwt.sign(payload, secretkey)
       const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: expiresInSeconds});
@@ -176,13 +176,45 @@ const validateToken = async (req, res) => {
 const logout = async (req, res) => {
     try{
 
-       return res.status(200).json({
-        success: true,
-        message: "logged out",
-    
+      // get user id from token in middlewere
+      const userId = req.user.id
+
+      // check if userId is not available
+      if (!userId){
+        return res.status(401).json({
+          sucess: false,
+          message: "user id not found"
+        })
+      }
+
+
+      const deleteUserTokensQuery = "DELETE FROM sessions WHERE user_id = ($1)"
+
+      // peform the db operation to delelet the user tokens. 
+      // the response holds the rowCount of how may rows were deleted
+      const response = await pool.query(deleteUserTokensQuery, [userId])
+
+      // check if any rows were deleted 
+      if (response.rowCount > 0){
+        
+          // rows were deleted so its a success
+          return res.status(200).json({
+          success: true,
+          message: "logged out",
+          
+        })
+      }
+
+     
+
+      // it got here meaning there were no session in the db. 
+       return res.status(401).json({
+        success: false,
+        message: "no session found",
       })
 
     }catch(error){
+      // in case of error
       return res.status(500).json({
       success: false,
       message: "Something went wrong during logout",

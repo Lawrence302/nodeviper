@@ -1,10 +1,16 @@
 
-import { getUserScores, addScore } from "./api_calls.js";
+
+import { getUserScores, addScore , getUserHighestScore} from "./api_calls.js";
 import { displayLoginModal, login, register , logout} from "./components/login.js";
+import { registerUIEvents, gameOverUIEvent } from "./components/modals.js";
 const navLoginButton = document.getElementById('nav-login-button')
 const navLogoutButton = document.getElementById('nav-logout-button')
-
+const navLeaderBoardButton = document.getElementById('nav-leaderboard-button')
+const usernameDispay = document.getElementById('username-display')
+const levelSpan = document.getElementById("level-value");
 const board = document.querySelector(".board");
+
+// initial starting values
 let level = 1;
 let score = 0;
 let speed = 300;
@@ -17,10 +23,14 @@ let snakeBody = [
 
 let foodData = {x:0, y:0, element:undefined}
 
+// calling the imported functions from other files
 displayLoginModal();
 login()
 register()
 logout()
+registerUIEvents()
+
+
 //DrawSnake()
 
 const drawSnake = () => {
@@ -57,14 +67,81 @@ const checkCollisions = () => {
         snakeBody[0].x < 1 || snakeBody[0].x > 30 ||
         snakeBody[0].y < 1 || snakeBody[0].y > 30
     ) {
-        alert("Game Over (Wall Collision)");
-        // update score in db
-        // get user scores
-        fetchUserScores(2)
+        // alert("Game Over (Wall Collision)");
+        const cause = "wall collision"
+        let newHighest = false
+       
 
-        const userScoreData = {"score": score, "level":level}
-        
-        addUserScore(userScoreData)
+        const scoreData = {"score": score, "level":level, "cause":cause, "highest": score}
+
+        // in case user is loggedin get user data from localstorage
+        const storedUser = JSON.parse(localStorage.getItem('user'))
+
+        if (storedUser){
+            const userId = storedUser.id
+
+            
+            // get highest score           
+            getUserHighestScore(userId)
+            .then((res) => res)
+            .then(data => {
+                
+                // check if old highest score is greater than current score
+                if(parseInt(data.max) > parseInt(scoreData.highest)){
+                    // No mantain previous highest score
+                    scoreData.highest = data.max
+                    newHighest = false
+                }else{
+                    // yes new highest score
+                    newHighest = true
+                }
+
+                 // send user score to db
+                addUserScore(scoreData)
+
+                // activate game over modal with values
+                gameOverUIEvent(scoreData, newHighest)
+
+                // re-initialize the game board
+                restartGame();
+                
+                
+            })     
+
+            return;
+        }
+
+        // getting the guest user data
+        const guestUser = JSON.parse(localStorage.getItem('guest'))
+
+        // check if the guest was registerd
+        if(!guestUser){
+            // in case the guest was not registered then we create a new guest object
+            localStorage.setItem('guest', JSON.stringify({ id: Date.now(), username: 'Guest User' , highScore : scoreData.highest}))
+            newHighest = true
+        }
+
+        // guest exist so just check and update the highest score
+        if (parseInt(guestUser.highScore) < parseInt(scoreData.highest)){
+
+            // yes new score greather than old score 
+            // update storage to reflect new high score
+            guestUser.highScore = scoreData.highest;
+            newHighest = true
+        }else{
+
+            // mantain the old high score from storage
+            scoreData.highest = guestUser.highScore;
+        }
+       
+        // save the guest data back to localstorage
+        localStorage.setItem('guest', JSON.stringify(guestUser))
+
+
+        // activate game over modal with values
+        gameOverUIEvent(scoreData, newHighest)
+
+        // re-initialize the game board
         restartGame();
         return;
     }
@@ -75,7 +152,79 @@ const checkCollisions = () => {
             snakeBody[i].x === snakeBody[0].x &&
             snakeBody[i].y === snakeBody[0].y
         ) {
-            alert("Game Over (Self Collision)");
+            // alert("Game Over (Self Collision)");
+             const cause = "self collision"
+             const scoreData = {"score": score, "level":level, "cause":cause, "highest": score}
+             let newHighest = false;
+            // get logged in user data from local storage
+            const storedUser = JSON.parse(localStorage.getItem('user'))
+
+            // if user exist
+            if (storedUser){
+                const userId = storedUser.id
+               
+               
+                 // update score in db           
+                getUserHighestScore(userId)
+                .then((res) => res)
+                .then(data => {
+
+                    // checking if previous highest score is higer
+                    if(parseInt(data.max) > parseInt(scoreData.highest)){
+                         // No mantain previous highest score
+                        scoreData.highest = data.max
+                        newHighest = false
+
+                    }else{
+                        // yes new highest score
+                        newHighest = true
+                    }
+
+                    // send user score to db
+                    addUserScore(scoreData)
+                            // activate game over modal with values
+                    gameOverUIEvent(scoreData, newHighest)
+
+                    // re-initialize the game board
+                    restartGame();
+                   
+                })
+              
+                return
+           
+            }
+
+                // getting the guest user data
+            const guestUser = JSON.parse(localStorage.getItem('guest'))
+
+            // check if the guest was registerd
+            if(!guestUser){
+                // in case the guest was not registered then we create a new guest object
+                localStorage.setItem( 'guest', JSON.stringify({ id: Date.now(), username: 'Guest User' , highScore : scoreData.highest}))
+                newHighest = true
+            }
+
+            // guest exist so just check and update the highest score 
+            if (parseInt(guestUser.highScore) < parseInt(scoreData.highest)){
+                
+                // new score greather than saved score  means new high score has been set
+                // set update saved score to reflect new score
+                guestUser.highScore = scoreData.highest;
+                newHighest = true
+            }else{
+
+                // the old score is still higher
+                scoreData.highest = guestUser.highScore;
+            }
+        
+            // save the guest data back to localstorage
+            localStorage.setItem('guest', JSON.stringify(guestUser))
+
+
+            // activate game over modal with values
+            gameOverUIEvent(scoreData, newHighest)
+
+            // re-initialize the game board
             restartGame();
             return;
         }
@@ -83,7 +232,9 @@ const checkCollisions = () => {
 };
 
 //Update()
-
+/**
+ * updates the snake body when it eats food
+ */
 const update = () => {
     let dir = getDirection();
     for (let i = snakeBody.length - 2 ; i>=0; i--){
@@ -95,36 +246,44 @@ const update = () => {
 }
 
 //RestartGame()
-
+/**
+ * restarts the game
+ * initializes all to zero and snake length to 1
+ */
 const restartGame = () => {
     snakeBody = [{x:1, y:1}]
     direction = {x:0, y:0}
     updateScore();
+    level = 0
+    levelSpan.textContent = 0;
 }
-//DrawFood()
 
+//DrawFood()
+/**
+ * draw the snake food randomly on the grid
+ */
 const drawFood = () => {
     let randX = Math.floor(Math.random() * 30);
     let randY = Math.floor(Math.random() * 30);
 
+    // creating the div element 
     let food = document.createElement('div')
     food.classList.add("food");
     food.style.gridColumnStart = randX == 0 ? 1 : randX;
     food.style.gridRowStart = randY == 0 ? 1 : randY;
 
     foodData = {x:randX == 0 ? 1: randX, y:randY == 0 ? 1:randY, element:food }
+
+    // adding the dive element to the grid
     board.appendChild(food);
 }
 
 
 //ExtendSnake()
-
+/**
+ * Increase the snake length
+ */
 const extendSnake = () => {
-    // let coords = {
-    //     x:snakeBody[snakeBody.length-1].x + Math.abs(direction.x),
-    //     y:snakeBody[snakeBody.length-1].y + Math.abs(direction.y)}
-    // snakeBody.push(coords);
-
     
     let lastSegment = snakeBody[snakeBody.length - 1];
     let coords = {
@@ -133,7 +292,7 @@ const extendSnake = () => {
     };
     snakeBody.push(coords);
 
-    
+    // modify score
     updateScore();
     // check level
     checkLevel();
@@ -141,6 +300,9 @@ const extendSnake = () => {
     
 }   
 
+/**
+ * update the score by counting the snake length
+ */
 const updateScore = () => {
     score = snakeBody.length - 1;
     let scoreDive = document.getElementById("score-value");
@@ -149,8 +311,13 @@ const updateScore = () => {
     }
     
 }
-//ChangeDirection()
 
+
+//ChangeDirection()
+/**
+ * 
+ * changing the directions using arrow keys
+ */
 const changeDirection = (event) => {
     let key = event.key
     switch(key){
@@ -176,11 +343,11 @@ const changeDirection = (event) => {
 
     }
 }
+// key press listiner
 window.addEventListener("keydown", changeDirection)
 
 
-//GetDirection()
-
+//GetDirection() for the snake
 const getDirection = () => {
     lastDirection = direction;
     return direction
@@ -188,7 +355,7 @@ const getDirection = () => {
 
 // increase level
 const checkLevel = () => {
-    let levelSpan = document.getElementById("level-value");
+    
     if (score >= 2 && score < 5){
         level = 2;
         speed = 200;
@@ -221,32 +388,13 @@ setInterval(()=>{
   console.log(speed)
 }, speed)
 
-
-// api related function operations
-const fetchUserScores = async (id) => {
-    try {
-        const response = await getUserScores(id);
-        console.log(response.ok)
-        if (!response.ok){
-            console.log(response)
-            return
-        }
-
-        console.log("successfull got scores " , response)
-    } catch (error) {
-        alert(error.message)
-    }
-}
-
 const addUserScore = async (scoreInfo) => {
     try {
         const response = await addScore(scoreInfo);
         if ( !response.ok){
-            console.log(response)
-            return
+            return null
         }
-        
-        console.log( "successfully added score ", response)
+
         return response
 
     } catch (error) {
@@ -256,13 +404,18 @@ const addUserScore = async (scoreInfo) => {
 
 // checking user status when page reloads
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('page loaded')
+
+    
     try {
+        // get registered user's data from localscorage
         const storedUser = JSON.parse(localStorage.getItem('user'));
   
+        // check if the user data is present
         if (storedUser && storedUser.loggedIn) {
 
             const token = storedUser.token
+
+            // request to validate the token to ensure user is logged in
             fetch(`http://localhost:3000/validate`, {
                 method: 'POST',
                 headers: {
@@ -274,32 +427,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.json()
             })
             .then((data)=>{
-                console.log(data)
+                console.log('this', data, 'this')
                 if (!data.success){
                     console.log("user not loged in")
                     localStorage.removeItem('user')
+
+                    // update ui if user is not logged in
                     navLoginButton.classList.remove('hidden')
                     navLogoutButton.classList.add('hidden')
+                    navLeaderBoardButton.classList.add('hiden')
                 }
 
+                // a function to make the first letter of a string to be in caps and the rest in lowercase
+                function capitalize(str){
+                    if (!str) return;
+                    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+                    
+                }
+                // display user name
+                usernameDispay.textContent = capitalize(storedUser.username);
+
+                // update ui in case user is logged in
                 navLoginButton.classList.add('hidden')
                 navLogoutButton.classList.remove('hidden')
+                navLeaderBoardButton.classList.remove('hidden')
 
                     console.log(storedUser)
             }).catch((error) => {
                 console.log(error.message)
             })
-            // console.log('Logged in user in localstorage:', storedUser.username);
-            // console.log('Token:', storedUser.token);
+           
             return
         }
     }catch (error) {
         console.error("Failed to parse user from localstorage: ", e)
     }
     
+    // getting guest users information
+    let guestUser = JSON.parse(localStorage.getItem('guest'));
 
-    console.log('no stored user was found')
+    // in case there is no guest user found
+    if (!guestUser){
+
+        // initialize new guest info
+        const guestInfo = {
+            id: 'guest_'+ Date.now(),
+            username : 'Guest User',
+            highScore: 0
+        }
+
+        //creating new guest user
+        localStorage.setItem('guest', JSON.stringify(guestInfo))
+
+
+        return
+    }
+
+    // show the username on the game screen
+    usernameDispay.textContent = guestUser.username;
+
+    
 })
-
-//////
 

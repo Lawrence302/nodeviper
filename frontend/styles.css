@@ -3,7 +3,7 @@
 } */
 
 .game-container{
-    border: 2px solid blue;
+    border-top: 2px solid blue;
     padding: 20px;
     
 }
@@ -36,7 +36,3 @@
     background-color: red;
 }
 
-
-.hide{
-    display: none;
-}

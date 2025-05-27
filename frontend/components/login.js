@@ -1,6 +1,7 @@
     
 const navLoginButton = document.getElementById('nav-login-button')
 const navLogoutButton = document.getElementById('nav-logout-button')
+const navLeaderBoardButton = document.getElementById('nav-leaderboard-button')
 const loginModal = document.getElementById('login-modal')
 const modalLoginButton = document.getElementById('modal-login-button')
 const modalRegisterButton = document.getElementById('modal-register-button')
@@ -110,10 +111,11 @@ export function login(){
             return
         }
 
+        // get input values
         const email = userEmailInput.value.trim();
         const password = userPasswordInput.value.trim();
 
-        // user input vallidation
+        // vallidate input values
         if (email === '' || password === ''){
             loginError.textContent = "Please Enter valid characters"
             return
@@ -131,7 +133,9 @@ export function login(){
                 const token = response.token
                 localStorage.setItem('user', JSON.stringify({id, loggedIn: true, username, token }))
 
+                // update the ui
                 navLoginButton.classList.add('hidden')
+                navLeaderBoardButton.classList.remove('hidden')
                 navLogoutButton.classList.remove('hidden')
                 loginModal.classList.add('hidden')
             }

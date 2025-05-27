@@ -1,4 +1,5 @@
 
+
 import pool from "../model/db.js";
 
 // frequently used functions
@@ -50,11 +51,12 @@ const addScore = async (req, res) => {
         const user_id = req.user.id
         const score = req.body.score;
         const level = req.body.level;
+        const cause = req.body.cause;
 
         
 
-        const addScoreQuery = "INSERT INTO scores (user_id, score, level) VALUES ($1, $2, $3) RETURNING*";
-        const newScoreValues = [user_id, score, level]
+        const addScoreQuery = "INSERT INTO scores (user_id, score, level, cause) VALUES ($1, $2, $3, $4) RETURNING*";
+        const newScoreValues = [user_id, score, level, cause]
 
         const addScoreResults = await pool.query(addScoreQuery, newScoreValues);
 
@@ -106,7 +108,7 @@ const addScore = async (req, res) => {
 
 const getUserScores = async (req, res) => {
        try {
-        const paramId = req.params.userid; // comes from url so its a string
+        const paramId = req.params.userId; // comes from url so its a string
         const userId = req.user.id // decoded from jwt so its a number
 
         if (String(paramId) === String(userId)){
@@ -119,12 +121,14 @@ const getUserScores = async (req, res) => {
                 // console.log(userScores.rows)
                 return res.status(200).json({success: true, message: "retrived user scores", data: userScores.rows})
             }
+
+            return res.status(404).json({success: false, message: "no users scores found"})
         }
 
         console.log(paramId,userId)
  
 
-        return res.status(404).json({ success: false, message: "No user scores found"});
+        return res.status(403).json({ success: false, message: "userId mosmatch"});
 
     } catch (error) {
         return res.status(500).json({success: false, message: 'server error', error: error.message})
@@ -132,10 +136,29 @@ const getUserScores = async (req, res) => {
     
 }
 
+const getUserHighestScore = async (req, res) => {
+    try {
+        const userId = req.params.userId
+
+        const getHighestScoreQuery = "SELECT MAX(score) FROM scores where user_id = ($1)"
+        const results = await pool.query(getHighestScoreQuery, [userId])
+
+        if( results.rows.length > 0 ){
+
+            return res.status(200).json({success: true, message: "retrived user highest score", max: results.rows[0].max})
+        }
+
+        return res.status(403).json({sucess: false, messege: "error getting score"})
+        
+    } catch (error) {
+          return res.status(500).json({success: false, message: 'server error', error: error.message})
+    }
+}
+
 
 export {
    
     addScore,
     getUserScores,
-
+    getUserHighestScore,
 };

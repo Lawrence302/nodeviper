@@ -12,22 +12,25 @@
 <body class="h-screen bg-blue-50">
     <div class="main-container flex flex-col h-full  border border-red-500 "> 
         <nav class=" flex flex-row justify-around m-4">
-            <div class="title">Snake game</div>
+            <div class="title font-bold text-xl text-blue-700 ">Snake game</div>
             <div>
                 <ul class="flex justify-around gap-6">
-                    <li class="" id="about">About</li>
-                    <button class=" bg-blue-700 text-white font-bold px-6 text-sm py-2 rounded-md" id="nav-login-button">Login</button>
-                    <button class=" hidden bg-blue-700 text-white font-bold px-6 text-sm py-2 rounded-md" id="nav-logout-button">Logout</button>
+                    <button id="about">About</button>
+                    <button id="nav-leaderboard-button" class=" hidden  border  px-2 rounded-md text-blue-700 outline-double hover:text-blue-500">Leaderboard</button>
+                    <button id="nav-login-button" class=" bg-blue-700 text-white font-bold px-6 text-sm py-2 rounded-md" >Login</button>
+                    <button id="nav-logout-button" class=" hidden bg-blue-700 text-white font-bold px-6 text-sm py-2 rounded-md" >Logout</button>
                 </ul>
             </div>
         </nav>
         <!-- game area -->
-        <div class="game-container   flex flex-col flex-grow  items-center">
+         <main id="app"></main>
+        <div class="game-container   flex flex-col flex-grow  items-center bg-blue-50">
             <div class="status-info min-w-[80vmin] max-w-[90vmin]">
-                <div class="score">score: <span id="score-value">9</span></div> 
-                <div class="level">Level: <span id="level-value">1</span></div>
+                <div class="score">score: <span id="score-value"></span></div> 
+                <div id="username-display" class=" text-sm bg-blue-200 text-black px-4 font-bold  rounded-md"> Guest User</div>
+                <div class="level">Level: <span id="level-value">0</span></div>
             </div>
-            <div class="board min-h-[90%] aspect-square"></div>
+            <div class="board min-h-[90%] aspect-square "></div>
         </div>
     </div>
 
@@ -62,6 +65,8 @@
             </div>
         </form>
     </div>
+
+    <div id="modals"></div>
 
     <!-- gameover moal -->
     <div id="game-over" class=""></div>
