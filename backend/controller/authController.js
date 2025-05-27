@@ -46,7 +46,11 @@ const generateJwtToken = async (id, username ) => {
 const register = async (req, res) => {
   try {
     
-    const {username, password, email } = req.body;
+    const {username, email, password, confirmPassword } = req.body;
+
+    if(password !== confirmPassword){
+      return res.status(409).json({success: false , message: "passwords do not match"})
+    }
 
     // checking if user with the username already exist
     const checkUserQuery = "SELECT username FROM users WHERE username = ($1)";
@@ -78,7 +82,7 @@ const register = async (req, res) => {
           { 
             success : true,
             message: 'Registration sucess',
-             data: results.rows[0],
+             data: {id, username},
              token: tokenGeneration.token ,
              expiresAt: tokenGeneration.expiresAt }
         );
@@ -114,17 +118,22 @@ const login = async (req, res)=>{
       const id = checkUserResults.rows[0].id
       
      /// generate token
-
      const tokenGeneration = await generateJwtToken(id, username);
 
       if(tokenGeneration.success){
-         return res.status(200).json(
+
+        const user = checkUserResults.rows[0]
+        
+
+
+        return res.status(200).json(
           { 
             success: true,
-            message: 'Registration sucess',
-             data: checkUserResults.rows[0],
-             token: tokenGeneration.token ,
-             expiresAt: tokenGeneration.expiresAt }
+            message: 'user loggedin',
+            data: {id, username},
+            token: tokenGeneration.token ,
+            expiresAt: tokenGeneration.expiresAt 
+          }
         );
         
       }
@@ -143,8 +152,49 @@ const login = async (req, res)=>{
 };
 
 
+// validate token from frontend
+const validateToken = async (req, res) => {
+  try{
+
+    return res.status(200).json({
+        success: true,
+        message: "Token is valid",
+        user: {id: req.user.id, username: req.user.username},
+    })
+
+  }catch(error){
+     return res.status(500).json({
+      success: false,
+      message: "Something went wrong during token validation",
+      error: error.message,
+    });
+  }
+}
+
+// loggout route
+
+const logout = async (req, res) => {
+    try{
+
+       return res.status(200).json({
+        success: true,
+        message: "logged out",
+    
+      })
+
+    }catch(error){
+      return res.status(500).json({
+      success: false,
+      message: "Something went wrong during logout",
+      error: error.message
+      })
+    }
+}
+
+
 export {
   register, 
   login,
-
+  validateToken,
+  logout,
 };

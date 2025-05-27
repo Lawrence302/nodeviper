@@ -1,5 +1,8 @@
 
 import { getUserScores, addScore } from "./api_calls.js";
+import { displayLoginModal, login, register , logout} from "./components/login.js";
+const navLoginButton = document.getElementById('nav-login-button')
+const navLogoutButton = document.getElementById('nav-logout-button')
 
 const board = document.querySelector(".board");
 let level = 1;
@@ -14,7 +17,10 @@ let snakeBody = [
 
 let foodData = {x:0, y:0, element:undefined}
 
-
+displayLoginModal();
+login()
+register()
+logout()
 //DrawSnake()
 
 const drawSnake = () => {
@@ -247,3 +253,53 @@ const addUserScore = async (scoreInfo) => {
         alert(error.message)
     }
 }
+
+// checking user status when page reloads
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('page loaded')
+    try {
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+  
+        if (storedUser && storedUser.loggedIn) {
+
+            const token = storedUser.token
+            fetch(`http://localhost:3000/validate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                }
+            })
+            .then((response) =>{ 
+                return response.json()
+            })
+            .then((data)=>{
+                console.log(data)
+                if (!data.success){
+                    console.log("user not loged in")
+                    localStorage.removeItem('user')
+                    navLoginButton.classList.remove('hidden')
+                    navLogoutButton.classList.add('hidden')
+                }
+
+                navLoginButton.classList.add('hidden')
+                navLogoutButton.classList.remove('hidden')
+
+                    console.log(storedUser)
+            }).catch((error) => {
+                console.log(error.message)
+            })
+            // console.log('Logged in user in localstorage:', storedUser.username);
+            // console.log('Token:', storedUser.token);
+            return
+        }
+    }catch (error) {
+        console.error("Failed to parse user from localstorage: ", e)
+    }
+    
+
+    console.log('no stored user was found')
+})
+
+//////
+

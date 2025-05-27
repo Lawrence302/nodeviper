@@ -1,0 +1,235 @@
+    
+const navLoginButton = document.getElementById('nav-login-button')
+const navLogoutButton = document.getElementById('nav-logout-button')
+const loginModal = document.getElementById('login-modal')
+const modalLoginButton = document.getElementById('modal-login-button')
+const modalRegisterButton = document.getElementById('modal-register-button')
+const modalRegisterShowSpan = document.getElementById('modal-register-show-span')
+const modalLoginShowSpan = document.getElementById('modal-login-show-span')
+const modalRegisterMemberDirectionMessage = document.getElementById('register-modal-member-direction-message')
+const modalLoginMemberDirectionMessage = document.getElementById('login-modal-member-direction-message')
+const confirmPasswordContainer = document.getElementById('confirm-password-container')
+const userEmailInput = document.getElementById('email-text')
+const userPasswordInput = document.getElementById('password-text')
+const userConfirmedPasswordInput = document.getElementById('confirm-password-text')
+const userNameInput = document.getElementById('username-text')
+const userNameContainer = document.getElementById('user-name-container')
+const loginError = document.getElementById('login-error')
+
+
+
+
+import { loginUser, registerUser , logoutUser} from "../api_calls.js"
+
+/** 
+ * Handles switching the form to registration mode
+ */
+modalRegisterShowSpan.addEventListener('click', ()=>{
+
+    // hides the login button and member register message
+    modalLoginButton.classList.add('hidden')
+    modalRegisterMemberDirectionMessage.classList.add('hidden')
+    
+    // shows register button and member login message by removing the hidden class
+    modalRegisterButton.classList.remove('hidden')
+
+    // shows user login messegae  in case user is already registered
+    modalLoginMemberDirectionMessage.classList.remove('hidden')
+
+    // show the confirm password element since its registration
+    confirmPasswordContainer.classList.remove('hidden')
+    // make the username field visible
+    userNameContainer.classList.remove('hidden')
+
+    // makeing the confirm password field required
+    userConfirmedPasswordInput.required = true
+    
+})
+
+/** 
+ * Handles switching the form to login mode
+ */
+modalLoginShowSpan.addEventListener('click', () => {
+
+    // shows login button 
+    modalLoginButton.classList.remove('hidden')
+
+    // show register member hidden message in case user is not registered
+    modalRegisterMemberDirectionMessage.classList.remove('hidden')
+
+    // hide registration button
+    modalRegisterButton.classList.add('hidden')
+
+   // hide the login message 
+    modalLoginMemberDirectionMessage.classList.add('hidden')
+
+    // hide the confirm password container since its not needed for login
+    confirmPasswordContainer.classList.add('hidden')
+
+    // hide the user name container 
+    userNameContainer.classList.add('hidden')
+
+    // make the userConfirmPassword input false since its not needed in login
+    userConfirmedPasswordInput.required = false
+})
+
+
+/**
+ * makes login modal to dissaper when the parent is clicked
+ */
+loginModal.addEventListener('click', (event)=>{
+    if(event.target == loginModal){
+        loginModal.classList.add("hidden")
+        clearForm()
+    }
+    
+})
+
+/**
+ * function to make the login modal visible
+ */
+export function displayLoginModal(){
+     navLoginButton.addEventListener('click', (e) => {
+        e.preventDefault()
+        loginModal.classList.remove('hidden')
+        console.log("login clicked")
+    })
+}
+
+/**
+ * login function that handles the login process
+ * receives input and peforms validation
+ * peform api call to peform the login action
+ */
+export function login(){
+    modalLoginButton.addEventListener('click', (e)=>{
+        e.preventDefault()
+        const form = e.target.closest('form')
+        if(!form.checkValidity()){
+            form.reportValidity()
+            return
+        }
+
+        const email = userEmailInput.value.trim();
+        const password = userPasswordInput.value.trim();
+
+        // user input vallidation
+        if (email === '' || password === ''){
+            loginError.textContent = "Please Enter valid characters"
+            return
+        }
+
+        /* handling the user login using .then . this is to avoid using async await which
+         will involve making the login function async and will add complexity to the code */ 
+       loginUser({email,password})
+       .then((response) => {
+
+            if (response.ok){
+                console.log("respone in login" ,response )
+                const id = response.data.id
+                const username = response.data.username
+                const token = response.token
+                localStorage.setItem('user', JSON.stringify({id, loggedIn: true, username, token }))
+
+                navLoginButton.classList.add('hidden')
+                navLogoutButton.classList.remove('hidden')
+                loginModal.classList.add('hidden')
+            }
+            
+        })
+        .catch((error)=>{
+            loginError.textContent = "Login failed. Please try again"
+        })
+       
+
+        console.log("login button clicked", {email, password})
+
+        clearForm()
+    })
+
+
+
+   
+  
+}
+/**
+ * Register function to handle user registration
+ * receives input and peforms validation
+ * Does api calls to peform the registration action
+ */
+export function register(){
+    
+    modalRegisterButton.addEventListener('click', (e)=>{
+        e.preventDefault()
+        const form = e.target.closest('form');
+
+        if(!form.checkValidity()){
+            form.reportValidity();
+            return;
+        }
+        
+        const userName = userNameInput.value.trim()
+        const email = userEmailInput.value.trim();
+        const password = userPasswordInput.value.trim();
+        const confirmPassword = userConfirmedPasswordInput.value.trim();
+
+        // user input vallidation
+        if (userName === "" || email === '' || password === '' || confirmPassword === ''){
+            loginError.textContent = "All fields are required"
+            return
+        }
+
+        if (password !== confirmPassword){
+            loginError.textContent = "Passwords do not match "
+            return
+        }
+
+        if (password.length <= 4){
+            loginError.textContent = "Password should be greater than 4 characters"
+            return
+        }
+
+
+
+        console.log(" register button clicked", {email, password, confirmPassword})
+
+        clearForm()
+    })
+
+
+}
+
+// logout function
+export function logout(){
+    navLogoutButton.addEventListener('click', () => {
+         const storedUser = JSON.parse(localStorage.getItem('user'))
+
+        if(storedUser) {    
+
+            const token = storedUser.token
+            logoutUser(token).then((response) => {
+                return response
+            }).then((data => {
+                if (data.ok){
+                    console.log('user is logged in')
+                    localStorage.removeItem('user')
+                    location.reload()
+                }
+            })).catch((err)=>{
+                console.error("Failed to loggout" , err)
+            })
+            
+            
+            
+        }
+    })
+   
+}
+
+const clearForm = () => {
+    userEmailInput.value = '';
+    userPasswordInput.value = '';
+    userConfirmedPasswordInput.value = '';
+    userNameInput.value= '';
+    loginError.textContent = '';
+}

@@ -4,30 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>snake game</title>
-    <link rel="stylesheet" href="styles.css">
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+   
 </head>
-<body class="h-screen">
-    <div class="main-container flex flex-col   border border-red-500 h-screen"> 
+<body class="h-screen bg-blue-50">
+    <div class="main-container flex flex-col h-full  border border-red-500 "> 
         <nav class=" flex flex-row justify-around m-4">
             <div class="title">Snake game</div>
             <div>
                 <ul class="flex justify-around gap-6">
                     <li class="" id="about">About</li>
-                    <li class="" id="login">Login</li>
-                    <li class="" id="logout">Logout</li>
+                    <button class=" bg-blue-700 text-white font-bold px-6 text-sm py-2 rounded-md" id="nav-login-button">Login</button>
+                    <button class=" hidden bg-blue-700 text-white font-bold px-6 text-sm py-2 rounded-md" id="nav-logout-button">Logout</button>
                 </ul>
             </div>
         </nav>
         <!-- game area -->
-        <div class="game-container  flex flex-col items-center">
+        <div class="game-container   flex flex-col flex-grow  items-center">
             <div class="status-info min-w-[80vmin] max-w-[90vmin]">
-                <div class="score">score: <span id="score-value">9</span></div>
+                <div class="score">score: <span id="score-value">9</span></div> 
                 <div class="level">Level: <span id="level-value">1</span></div>
             </div>
-            <div class="board min-w-[80vmin] max-w-[90vmin] aspect-square"></div>
+            <div class="board min-h-[90%] aspect-square"></div>
         </div>
     </div>
+
+    <!-- login modal -->
+    <div id="login-modal" 
+        class=" hidden absolute top-0 left-0 right-0 h-full w-full border 
+                border-green-600 bg-black bg-opacity-50 flex items-center 
+    ">
+        <form class=" bg-white max-w-md border  rounded-md m-auto py-6  px-4 min-w-[250px] ">
+            <div id="user-name-container" class="hidden ">
+                <label for="user-name">Username: </label>
+                <input id="username-text" type="text" placeholder="enter a username " class="border border-black-500 rounded-md p-1 my-2 border-b-black w-full">
+            </div>
+            <div >
+                <label for="email">Email: </label> <br>
+                <input id="email-text" type="email" required placeholder=" Enter Email" class=" border border-black-500 rounded-md p-1 my-2 border-b-black w-full" />
+            </div>
+             <div>
+                <label for="password">Password: </label> <br>
+                <input id="password-text" type="password" required placeholder="Enter password" class=" border border-black-500 rounded-md p-1 my-2 border-b-black w-full" />
+            </div>
+            <div id="confirm-password-container" class="hidden ">
+                <label for="password">Confirm Password: </label> <br>
+                <input id="confirm-password-text" type="password" placeholder="Enter password" class=" border border-black-500 rounded-md p-1 my-2 border-b-black w-full " />
+            </div>
+            <div id="login-modal-member-direction-message" class=" hidden text-sm  " > Already a member ? <span id="modal-login-show-span" class=" text-blue-500 cursor-pointer hover:text-blue-700 " >Login</span> </div>
+            <div id="register-modal-member-direction-message" class=" text-sm  " >Don't have an account ? <span id="modal-register-show-span" class=" text-blue-500 cursor-pointer hover:text-blue-700 " >Register</span></div>
+            <div id="login-error" class=" text-red-500 text-sm text-wrap " ></div>
+            <div>
+                <button id="modal-login-button" class="border bg-blue-700 px-4 py-1 text-white  text-lg rounded-md mt-4 w-full"  >Login</button>
+                <button id="modal-register-button" class=" hidden border bg-blue-700 px-4 py-1 text-white  text-lg rounded-md mt-4 w-full"  >Register</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- gameover moal -->
+    <div id="game-over" class=""></div>
     <script type="module" src="./app.js"></script>
 </body>
 </html>
