@@ -1,9 +1,10 @@
 
+
 // getting the global elements present in the index.html UI
 const aboutButton = document.getElementById('about')
 const modals = document.getElementById('modals')
 const navLeaderBoardButton = document.getElementById('nav-leaderboard-button')
-
+import { getLeaderboardData } from "../api_calls.js"
 
 export function registerUIEvents(){
 
@@ -62,14 +63,84 @@ export function registerUIEvents(){
         
         // fetch the leaderboard.html modal
         fetch('./pages/leaderboard.html')
-        .then((res) => res.text())
+        .then((res) => res.text()) // convert the response into text
         .then(html => {
             // add leaderboard html content to modal
             modals.innerHTML = html;
 
+            // get the leaderboard modal now that it is present
             const leaderboardModal = document.getElementById('leaderboard-modal')
 
+            // if the modal does not exist, end the execution
             if(!leaderboardModal) return ;
+
+
+            // select the table on the modal
+            const tableBody = document.getElementById('dash-board-list');
+            // if table is not found end execution
+            if (!tableBody) return;
+
+            // Clear existing rows (if any)
+            tableBody.innerHTML = '';
+
+            /**
+             * This function gets the lederboard data from the api call
+             */
+            getLeaderboardData()
+            .then((res)=> {
+               
+                const leaderboardData = res.data.data
+
+                
+                // Check if leaderboardData is empty or not loaded
+                if (!leaderboardData || leaderboardData.length === 0) {
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = `
+                        <td colspan="3" class="text-center text-gray-500 py-4">
+                        No leaderboard data available.
+                        </td>
+                    `;
+
+                    // add the message to the table body
+                    tableBody.appendChild(emptyRow);
+                return;
+                }
+
+                // Add each player as a table row
+                leaderboardData.forEach(player => {
+                    // create a row for each player
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'even:bg-gray-50 hover:bg-green-50';
+
+                    // assigne the values gotten from backend to respective column
+                    row.innerHTML = `
+                        <td class="px-4 py-2 border-b">${player.rank}</td>
+                        <td class="px-4 py-2 border-b">${player.username}</td>
+                        <td class="px-4 py-2 border-b">${player.score}</td>
+                        <td class="px-4 py-2 border-b">${player.level}</td>
+                        
+                        <td class="px-4 py-2 border-b">${player.date.split("T")[0]}</td>
+                    `;
+
+                    // add the generated row to the table body
+                    tableBody.appendChild(row);
+                });
+
+            // in case of error , show no leader data available
+            }).catch((err)=>{
+                
+                // Clear existing rows (if any)
+                tableBody.innerHTML = '';
+
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `
+                    <td colspan="3" class="text-center text-gray-500 py-4">
+                    No leaderboard data available.
+                    </td>
+                `;
+                tableBody.appendChild(emptyRow);
+            })
 
             // To close the leaderboard when modal is clicked
             leaderboardModal.addEventListener('click', (e)=> {
@@ -88,8 +159,8 @@ export function registerUIEvents(){
 }
 
 /**
-     * Game over ui event
-     */
+* Game over ui event
+*/
 export function gameOverUIEvent(gameOverInfo, newHighest){
     fetch('./pages/gameover.html')
     .then((res) => res.text() )

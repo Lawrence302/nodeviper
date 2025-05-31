@@ -53,7 +53,12 @@ const addScore = async (req, res) => {
         const level = req.body.level;
         const cause = req.body.cause;
 
-        
+        let calculateLevel = Math.min(1 + Math.floor((score - 3) / 20), 10);
+
+        if (calculateLevel !== level) {
+            return  res.status(500).json({success: false, message:"Failed to add score"})
+        }
+
 
         const addScoreQuery = "INSERT INTO scores (user_id, score, level, cause) VALUES ($1, $2, $3, $4) RETURNING*";
         const newScoreValues = [user_id, score, level, cause]
@@ -61,7 +66,7 @@ const addScore = async (req, res) => {
         const addScoreResults = await pool.query(addScoreQuery, newScoreValues);
 
         if (addScoreResults.rows.length === 0){
-            return  res.status(500).json({success: false, message:"Failed to add score"})
+            return  res.status(400).json({success: false, message:"Failed to add score"})
         }
            
         // compare against leaderboard score
@@ -155,10 +160,44 @@ const getUserHighestScore = async (req, res) => {
     }
 }
 
+const getLeaderboardData = async (req, res) => {
+    
+    try {
+        // "id": 1,
+            //   "user_id": 1,
+            //   "highest_score": 35,
+            //   "highest_level": 1,
+            //   "achieved_at": 
+        const getLeaderboardDataQuery = 
+            `SELECT
+                RANK() OVER (ORDER BY l.highest_score DESC) AS rank,
+                l.id as id, l.highest_score as score,
+                l.highest_level as level,
+                l.achieved_at as date, 
+                u.username FROM leaderboard l JOIN users u ON l.user_id = u.id order by l.highest_score DESC`
+        const leaderboardData = await pool.query(getLeaderboardDataQuery)
+
+        if (!leaderboardData || leaderboardData.rows.length === 0){
+            return res.status(404).json({success: false, message: "no data found "})
+        }
+
+
+        return res.status(200).json({
+            success: true,
+            message: 'learderboard data',
+            data : leaderboardData.rows
+        })
+        
+    } catch (error) {
+        res.status(500).json({success: false, message: 'server error', error: error.message})
+    }
+}
+
 
 export {
    
     addScore,
     getUserScores,
     getUserHighestScore,
+    getLeaderboardData
 };

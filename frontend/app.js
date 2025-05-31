@@ -295,7 +295,8 @@ const extendSnake = () => {
     // modify score
     updateScore();
     // check level
-    checkLevel();
+    // level = Math.min(1 + Math.floor((snake.length - 3) / 20), 10);
+
     
     
 }   
@@ -306,6 +307,10 @@ const extendSnake = () => {
 const updateScore = () => {
     score = snakeBody.length - 1;
     let scoreDive = document.getElementById("score-value");
+
+    // check and update the level
+    level = Math.min(1 + Math.floor((snakeBody.length - 3) / 20), 10);
+
     if (scoreDive){
         scoreDive.textContent = score;
     }
@@ -353,24 +358,6 @@ const getDirection = () => {
     return direction
 }
 
-// increase level
-const checkLevel = () => {
-    
-    if (score >= 2 && score < 5){
-        level = 2;
-        speed = 200;
-        console.log('welcome to level 2')
-        levelSpan.textContent = 2
-    }else if (score >= 5){
-        level = 3;
-        speed = 100;
-        console.log('welcome to level 3')
-        levelSpan.textContent = 3
-    }
-    
-    console.log(speed)
-}
-
 drawFood();
 updateScore();
 
@@ -384,8 +371,6 @@ setInterval(()=>{
     //Update()
     update();
 
-    
-  console.log(speed)
 }, speed)
 
 const addUserScore = async (scoreInfo) => {
@@ -452,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 navLogoutButton.classList.remove('hidden')
                 navLeaderBoardButton.classList.remove('hidden')
 
-                    console.log(storedUser)
+                   
             }).catch((error) => {
                 console.log(error.message)
             })

@@ -111,7 +111,7 @@ const login = async (req, res)=>{
       const passwordMatch = await bcrypt.compare(password, passwordHash);
 
       if (!passwordMatch){
-        return res.status(401).json({message: "incorrect password"})
+        return res.status(401).json({success: false, message: "incorrect email or password"})
       }
 
       const username = checkUserResults.rows[0].username
@@ -145,7 +145,7 @@ const login = async (req, res)=>{
 
     return res.status(404).json({ success: false, message: 'user not found please register first'});
   } catch (error) {
-    console.log(error)
+    console.log(error.message)
     return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
   

@@ -1,7 +1,56 @@
-
+<!-- 
 
 <div id="leaderboard-modal" class=" flex items-center bg-black bg-opacity-50 absolute h-full left-0 right-0 top-0">
     <div class=" bg-white m-auto p-4">
-        leaderboard table
+        <ul id="dash-board-list">
+            <table class="">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Rank</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+                
+                <tr>
+
+                </tr>
+            </table>
+        </ul>
+        
     </div>
+</div> -->
+
+<div id="leaderboard-modal" class="flex items-center justify-center bg-black bg-opacity-50 fixed inset-0 z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h2 class="text-xl font-bold mb-4 text-center">Leaderboard</h2>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto border border-gray-300 text-sm text-gray-700">
+        <thead class="bg-gray-100">
+          <tr>
+
+            <th class="px-4 py-2 border-b text-left">Rank</th>
+            <th class="px-4 py-2 border-b text-left">Name</th>
+            <th class="px-4 py-2 border-b text-left">Score</th>
+            <th class="px-4 py-2 border-b text-left">Level</th>          
+            <th class="px-4 py-2 border-b text-left">Date</th>
+          </tr>
+        </thead>
+        <tbody id="dash-board-list">
+          <!-- Example row, replace or populate dynamically -->
+          <tr class="even:bg-gray-50 hover:bg-green-50">
+            <td class="px-4 py-2 border-b">Player1</td>
+            <td class="px-4 py-2 border-b">600</td>
+            <td class="px-4 py-2 border-b">9</td>
+            <td class="px-4 py-2 border-b">1</td>
+            <td class="px-4 py-2 border-b">25-05-31</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

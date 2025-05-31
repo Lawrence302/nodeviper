@@ -16,6 +16,7 @@ const userConfirmedPasswordInput = document.getElementById('confirm-password-tex
 const userNameInput = document.getElementById('username-text')
 const userNameContainer = document.getElementById('user-name-container')
 const loginError = document.getElementById('login-error')
+const usernameDispay = document.getElementById('username-display')
 
 
 
@@ -41,6 +42,9 @@ modalRegisterShowSpan.addEventListener('click', ()=>{
     confirmPasswordContainer.classList.remove('hidden')
     // make the username field visible
     userNameContainer.classList.remove('hidden')
+
+    // clear any error in the login error element if any exist
+    loginError.textContent = ''
 
     // makeing the confirm password field required
     userConfirmedPasswordInput.required = true
@@ -69,6 +73,10 @@ modalLoginShowSpan.addEventListener('click', () => {
 
     // hide the user name container 
     userNameContainer.classList.add('hidden')
+
+    // clear any error in the login error element if any exist
+    loginError.textContent = ''
+
 
     // make the userConfirmPassword input false since its not needed in login
     userConfirmedPasswordInput.required = false
@@ -126,11 +134,17 @@ export function login(){
        loginUser({email,password})
        .then((response) => {
 
+            // if the login is successful
             if (response.ok){
-                console.log("respone in login" ,response )
+               // get user information from the response.data object
                 const id = response.data.id
                 const username = response.data.username
                 const token = response.token
+
+                // delete the guest user in case one existed
+                localStorage.removeItem('guest')
+
+                // store the user's information into local storage
                 localStorage.setItem('user', JSON.stringify({id, loggedIn: true, username, token }))
 
                 // update the ui
@@ -138,15 +152,40 @@ export function login(){
                 navLeaderBoardButton.classList.remove('hidden')
                 navLogoutButton.classList.remove('hidden')
                 loginModal.classList.add('hidden')
+
+                // display users name above the board
+                usernameDispay.textContent = username
+
+                clearForm()
+                return
             }
+
+            // in case of a wrong email or password
+            if (response.status == 401){
+                loginError.textContent = response.message
+                return
+            }
+
+            // in case the user is not registered
+            if (response.status == 404){
+                loginError.textContent = response.message
+                return
+            }
+
             
         })
         .catch((error)=>{
-            loginError.textContent = "Login failed. Please try again"
+            // in case of network error 
+            if (error.message == 'Failed to fetch'){
+                loginError.textContent = "Login failed. Network error"
+                return
+            }
+            // incase of backend server error
+            loginError.textContent = "Login failed. Pleas try again"
         })
        
 
-        console.log("login button clicked", {email, password})
+       
 
         clearForm()
     })
@@ -195,7 +234,52 @@ export function register(){
 
 
 
-        console.log(" register button clicked", {email, password, confirmPassword})
+        // console.log(" register button clicked", {email, password, confirmPassword})
+        /**
+         * peforming user registration process
+         */
+        registerUser({email, password, confirmPassword})
+        .then((response) => {
+
+            // if registration is successful
+            if (response.ok){
+               // getting the user information from the response data object
+                const id = response.data.id
+                const username = response.data.username
+                const token = response.token
+
+                localStorage.removeItem("guest")
+
+                // storing the users information into local storage
+                localStorage.setItem('user', JSON.stringify({id, loggedIn: true, username, token }))
+
+                // update the ui
+                navLoginButton.classList.add('hidden')
+                navLeaderBoardButton.classList.remove('hidden')
+                navLogoutButton.classList.remove('hidden')
+                loginModal.classList.add('hidden')
+
+                // display the username above the board
+                usernameDispay.textContent = username
+
+                clearForm()
+                return
+            }
+
+            // in case registration fails
+            loginError.textContent = response.message
+
+            return
+        }).catch((error) => {
+            // in case of network error
+            if (error.message == 'Failed to fetch'){
+                loginError.textContent = "Login failed. Network error"
+                return
+            }
+
+            // in case of a failure from backend
+            loginError.textContent = "Login failed. Pleas try again"
+        })
 
         clearForm()
     })

@@ -77,15 +77,15 @@ export async function getUserHighestScore(id){
 
 
 export async function addScore(scoreInfo){
-    console.log("info before adding scores : ", scoreInfo)
+    
 
     const storedUser = JSON.parse(localStorage.getItem('user'))
-    if(!storedUser) return;
+    if(!storedUser) throw Error(" data not available");
 
-    console.log(storedUser.token , "good")
+   
     const token = storedUser.token
 
-    console.log("got here to add scores: ", token)
+   
     try {
         const res = await fetch(`${API_BASE}/score/add`,{
             method: 'POST',
@@ -114,6 +114,48 @@ export async function addScore(scoreInfo){
     }
 }
 
+/**
+ * gets the leaaderboard data from backend
+ * 
+ */
+export async function getLeaderboardData(){
+
+    const storedUser = JSON.parse(localStorage.getItem('user'))
+    if(!storedUser) throw Error(" user data not available ");
+
+   
+    const token = storedUser.token
+
+    try {
+
+        const res = await fetch(`${API_BASE}/score/leaderboard`, {
+            headers:{
+                'Content-Type': "application/json",
+                'Authorization': `Bearer ${token}`
+            }
+        })
+
+        const dashboardData = await res.json()
+
+        if (!res.ok){
+            return {
+                success: false,
+                ok: res.ok,
+                message: dashboardData.message
+            }
+        }
+
+        return {
+            sucess: true,
+            ok : res.ok,
+            data : dashboardData
+        }
+        
+    } catch (error) {
+        throw error
+    }
+}
+
 // console.log(await addScore({"score": 7, "level":1}))
 
 // register user
@@ -131,18 +173,22 @@ export async function registerUser(userData){
         });
 
         const data = await res.json()
-        console.log("user registration ", data)
+
+        if (!res.ok){
+            return {
+                status: res.status,
+                ok : res.ok,
+                message : data.message
+            }
+        }
+       
         return {
             status: res.status,
             ok: res.ok,
             ...data
         }
     }catch (error){
-        return {
-            sucess: false,
-            message: error.message,
-            error : true 
-        }
+        throw error
     }
 }
 
@@ -158,7 +204,26 @@ export async function loginUser(userData){
         })
 
         const data = await res.json()
+
+        if (res.status == 401){
+            console.log("herer 401")
+            return {
+                status: res.status,
+                ok : res.ok,
+                message: data.message
+            }
+        }
+
+        if (res.status == 404){
+          
+            return {
+                 status: res.status,
+                ok : res.ok,
+                message: data.message
+            }
+        }
        
+      
        
         return {
             status: res.status,
@@ -167,11 +232,8 @@ export async function loginUser(userData){
         }
 
     }catch(error){
-        return {
-            success: false,
-            message: error.message,
-            error: true
-        }
+
+        throw error
     }
 }
 
