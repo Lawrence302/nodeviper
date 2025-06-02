@@ -301,6 +301,12 @@ export function logout(){
                 if (data.ok){
                     console.log('user is logged in')
                     localStorage.removeItem('user')
+
+                    // update ui 
+                    navLoginButton.classList.remove('hidden')
+                    navLogoutButton.classList.add('hidden')
+                    navLeaderBoardButton.classList.add('hidden')
+                
                     location.reload()
                 }
             })).catch((err)=>{

@@ -1,6 +1,6 @@
 
 
-import { getUserScores, addScore , getUserHighestScore} from "./api_calls.js";
+import {  addScore , getUserHighestScore, logoutUser, refreshUserToken, validateUserToken} from "./api_calls.js";
 import { displayLoginModal, login, register , logout} from "./components/login.js";
 import { registerUIEvents, gameOverUIEvent } from "./components/modals.js";
 const navLoginButton = document.getElementById('nav-login-button')
@@ -388,8 +388,9 @@ const addUserScore = async (scoreInfo) => {
 }
 
 // checking user status when page reloads
-document.addEventListener('DOMContentLoaded', () => {
-
+document.addEventListener('DOMContentLoaded', async () => {
+   
+            
     
     try {
         // get registered user's data from localscorage
@@ -398,37 +399,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // check if the user data is present
         if (storedUser && storedUser.loggedIn) {
 
-            const token = storedUser.token
+            let token = storedUser.token
 
             // request to validate the token to ensure user is logged in
-            fetch(`http://localhost:3000/validate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                }
-            })
-            .then((response) =>{ 
-                return response.json()
-            })
-            .then((data)=>{
-                console.log('this', data, 'this')
-                if (!data.success){
-                    console.log("user not loged in")
-                    localStorage.removeItem('user')
+            const validateToken = await validateUserToken(token)
 
-                    // update ui if user is not logged in
-                    navLoginButton.classList.remove('hidden')
-                    navLogoutButton.classList.add('hidden')
-                    navLeaderBoardButton.classList.add('hiden')
-                }
+            if (validateToken.success){
 
-                // a function to make the first letter of a string to be in caps and the rest in lowercase
-                function capitalize(str){
-                    if (!str) return;
-                    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-                    
-                }
+                // update token in local storage
+                storedUser.token = validateToken.token
+                localStorage.setItem('user', JSON.stringify(storedUser))
+                
+                console.log("token refreshed")
+
                 // display user name
                 usernameDispay.textContent = capitalize(storedUser.username);
 
@@ -437,16 +420,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 navLogoutButton.classList.remove('hidden')
                 navLeaderBoardButton.classList.remove('hidden')
 
+                return
+            }
+
+            localStorage.removeItem('user')
+            // update ui 
+            navLoginButton.classList.remove('hidden')
+            navLogoutButton.classList.add('hidden')
+            navLeaderBoardButton.classList.add('hidden')
+
+            logoutUser(storedUser.token)
+            throw Error("Refresh token failed")
+            
                    
-            }).catch((error) => {
-                console.log(error.message)
-            })
-           
-            return
         }
     }catch (error) {
-        console.error("Failed to parse user from localstorage: ", e)
+        console.error("Failed to parse user from localstorage: ", error)
     }
+
+   
+        
     
     // getting guest users information
     let guestUser = JSON.parse(localStorage.getItem('guest'));
@@ -474,3 +467,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
 })
 
+ // a function to make the first letter of a string to be in caps and the rest in lowercase
+function capitalize(str){
+    if (!str) return;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    
+}

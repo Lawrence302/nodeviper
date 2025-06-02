@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import pool from "../model/db.js";
 import bcrypt from 'bcrypt';
+import crypto from 'crypto'
 
 const saltRound = 10
 
@@ -22,7 +23,7 @@ const generateJwtToken = async (id, username ) => {
       const expiresInSeconds = 10 * 60;
       const expiresAt = new Date((Date.now() + expiresInSeconds * 1000));
      // jwt.sign(payload, secretkey)
-      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: expiresInSeconds});
+      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: '15s'});
 
       // adding the token to sessions table
       const insertTokenQuery = "INSERT INTO sessions(user_id, token, expires_at) values($1,$2,$3) RETURNING*";
@@ -117,10 +118,27 @@ const login = async (req, res)=>{
       const username = checkUserResults.rows[0].username
       const id = checkUserResults.rows[0].id
       
-     /// generate token
+     /// generate acess token
      const tokenGeneration = await generateJwtToken(id, username);
 
+     // generate refresh token 
+     const refreshToken = crypto.randomBytes(64).toString('hex');
+     const expires_at= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+     // store refresh token in db
+     const storeRefreshTokenQuery = "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES($1, $2, $3) returning*"
+     const rfToken = await pool.query(storeRefreshTokenQuery, [id, refreshToken, expires_at])
+     
+
       if(tokenGeneration.success){
+
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          // secure: process.env.NODE_ENV === "production", // only use secure cookies in production
+          secure: true,
+          sameSite: "none",
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        });
 
         const user = checkUserResults.rows[0]
         
@@ -132,7 +150,8 @@ const login = async (req, res)=>{
             message: 'user loggedin',
             data: {id, username},
             token: tokenGeneration.token ,
-            expiresAt: tokenGeneration.expiresAt 
+            expiresAt: tokenGeneration.expiresAt ,
+            // rfToken : rfToken.rows[0]
           }
         );
         
@@ -159,7 +178,7 @@ const validateToken = async (req, res) => {
     return res.status(200).json({
         success: true,
         message: "Token is valid",
-        user: {id: req.user.id, username: req.user.username},
+        // user: {id: req.user.id, username: req.user.username},
     })
 
   }catch(error){
@@ -171,10 +190,87 @@ const validateToken = async (req, res) => {
   }
 }
 
+// refresh token route
+const refreshToken = async (req, res) => {
+  try {
+    const refreshTokenFromCookie = req.cookies.refreshToken;
+
+    // console.log(refreshTokenFromCookie)
+
+    if (!refreshTokenFromCookie) {
+      return res.status(401).json({ success: false, message: "No refresh token provided" });
+    }
+
+    // Look up the refresh token in DB
+    const query = "SELECT * FROM refresh_tokens WHERE token = $1";
+    const result = await pool.query(query, [refreshTokenFromCookie]);
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "Invalid refresh token" });
+    }
+
+    const storedToken = result.rows[0];
+
+    // Check expiration
+    if (new Date() > storedToken.expires_at) {
+      // Optionally delete the expired token here
+      await pool.query("DELETE FROM refresh_tokens WHERE id = $1", [storedToken.id]);
+
+      return res.status(403).json({ success: false, message: "Refresh token expired" });
+    }
+
+    // If valid, generate a new access token
+    // You might want to fetch the user info from users table here for username, etc.
+    const userQuery = "SELECT username FROM users WHERE id = $1";
+    const userResult = await pool.query(userQuery, [storedToken.user_id]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const username = userResult.rows[0].username;
+    const newGeneratedTokenData = await generateJwtToken(storedToken.user_id, username)
+    const newAccessToken = newGeneratedTokenData.token
+
+    // (Optional) Generate a new refresh token, store it, delete the old one
+    // For simplicity, here we keep the same refresh token
+
+    return res.status(200).json({
+      success: true,
+      message: "token refreshed ",
+      token: newAccessToken,
+    });
+
+  } catch (error) {
+    console.error("Refresh token error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 // loggout route
 
 const logout = async (req, res) => {
     try{
+
+      // get the refresh token from browser
+      const refreshToken = req.cookies.refreshToken
+
+      if(!refreshToken){
+        return res.status(400).json({success: false, message: "no refresh token found"})
+      }
+
+      // delete the refresh token from the db
+      const deleteRefreshTokenQuery = "DELETE FROM refresh_tokens where token = ($1)"
+      await pool.query(deleteRefreshTokenQuery, [refreshToken])
+
+      // clear the cookies by setting it to expire immediately
+       res.cookie("refreshToken", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Lax",
+        expires: new Date(0), // Expire cookie immediately
+      });
 
       // get user id from token in middlewere
       const userId = req.user.id
@@ -188,6 +284,7 @@ const logout = async (req, res) => {
       }
 
 
+      // query to delete the tokens from sessions table 
       const deleteUserTokensQuery = "DELETE FROM sessions WHERE user_id = ($1)"
 
       // peform the db operation to delelet the user tokens. 
@@ -227,6 +324,7 @@ const logout = async (req, res) => {
 export {
   register, 
   login,
+  refreshToken,
   validateToken,
   logout,
 };
