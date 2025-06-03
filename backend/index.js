@@ -8,10 +8,12 @@ import fs from 'fs'
 import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import scoreRoutes from './routes/scoreRoutes.js';
+import docRoutes from './routes/docRoutes.js'
 
 // access environmetal variables from .env
 import dotenv from 'dotenv';
 dotenv.config(); 
+
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -34,6 +36,9 @@ app.use('/admin', adminRoutes);
 
 // auth routes
 app.use('/', authRoutes);
+
+// docs routes
+app.use('/api', docRoutes)
 
 // score and profile routes
 app.use('/score',scoreRoutes);

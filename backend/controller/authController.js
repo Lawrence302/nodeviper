@@ -3,13 +3,14 @@ import pool from "../model/db.js";
 import bcrypt from 'bcrypt';
 import crypto from 'crypto'
 
-const saltRound = 10
+const saltRound = 10 // salt round for hashing
 
-// function definitions for certain tasks
+// function for hashing user password
 const hashPassword = async (password) => {
   try{
+    // hashing user password using bcrypt
     const hash = await bcrypt.hash(password, saltRound);
-    return hash
+    return hash // return password hash
   }catch (err){
     throw err
   }
@@ -23,7 +24,7 @@ const generateJwtToken = async (id, username ) => {
       const expiresInSeconds = 10 * 60;
       const expiresAt = new Date((Date.now() + expiresInSeconds * 1000));
      // jwt.sign(payload, secretkey)
-      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: '15s'});
+      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: '1m'});
 
       // adding the token to sessions table
       const insertTokenQuery = "INSERT INTO sessions(user_id, token, expires_at) values($1,$2,$3) RETURNING*";
@@ -44,13 +45,54 @@ const generateJwtToken = async (id, username ) => {
 
 //
 // Funcition definition for routes
+/**
+ * Registers a new user.
+ * @param {Request} req - Express request object containing user data.
+ * @param {Response} res - Express response object.
+ * @returns {JSON} Returns success or error response.
+ */
 const register = async (req, res) => {
+  // #swagger.summary = 'User registration'
+  // #swagger.tags = ['authentication']
+  // #swagger.description = 'Register a new user with username, email, password, confirmPassword.'
+  /* #swagger.parameters['body'] = {
+      in: 'body',
+      required: true,
+      schema: {
+          username: 'johnMax',
+          email: 'john@example.com',
+          password: '123456',
+          confirmPassword: '123456'
+      }
+  } */
+  /* #swagger.responses[201] = {
+        description: 'User registered successfully',
+        schema: { success: true, message: 'Registration success', data: { id : 4, username: 'johndoe', token: 'jwt token' } }
+  } */
+  /* #swagger.responses[400] = {
+        description: 'passwords and confirmPassword do not match',
+        schema: {sucess: false, message: "password and confirmPassword must be same"}
+  } */
+  /* #swagger.responses[409] = {
+        description: 'username already exist OR email already exist',
+        schema: {sucess: false, message: "username already taken / user already registered with this email"}
+  } */
+  /* #swagger.responses[500] = {
+      description: 'Internal Server Error: Token generation failed or unexpected server error',
+      schema: {
+          success: false,
+          message: 'User registered but failed to login or Server error or Registration failed'
+      }
+  } */
+ 
   try {
     
+    // receives data from request body
     const {username, email, password, confirmPassword } = req.body;
 
+    // check if password and confirmpassword are matching 
     if(password !== confirmPassword){
-      return res.status(409).json({success: false , message: "passwords do not match"})
+      return res.status(400).json({success: false , message: "password and confirmPassword must be same"})
     }
 
     // checking if user with the username already exist
@@ -61,46 +103,102 @@ const register = async (req, res) => {
       return res.status(409).json({success: false , message: "username already taken"})
     }
 
+    // check if email is already taken
+    const checkEmailQuery = "SELECT email FROM users WHERE email = ($1)";
+    const checkEmail = await pool.query(checkEmailQuery, [email])
+
+    // check if email already exist
+    if (checkEmail.rows.length > 0){
+      return res.status(409).json({success: false , message: "user already registered with this email"})
+    }
+
+    // hash the input password
     const passwordHash = await hashPassword(password);
 
+    // insert users data to database
     const query = "INSERT INTO users (username, password_hash, email) VALUES($1,$2,$3) RETURNING*"
     const values = [username, passwordHash, email]
 
     
 
+    
     const results = await pool.query(query, values);
-
+    // if data was added to db
     if (results.rows.length > 0){
      
       const id = results.rows[0].id
 
-      // generate token
+      // generate user access  token
       const tokenGeneration = await  generateJwtToken(id, username);
 
+      // if the token generation was successful
       if (tokenGeneration.success){
         
+        // sucessfull response sent
         return res.status(201).json(
           { 
             success : true,
-            message: 'Registration sucess',
+            message: 'Registration success',
              data: {id, username},
-             token: tokenGeneration.token ,
-             expiresAt: tokenGeneration.expiresAt }
+             token: tokenGeneration.token 
+          }
         );
       }
 
+      // if there was an error generating token 
       return res.status(500).json({ success: false, message: "user registered but failed to login"});
 
     }
-    
-    return res.status(401).json({success: false , message: "Registration failed", data: []})
+    // in case of error during user registration
+    return res.status(500).json({success: false , message: "Registration failed"})
+
   } catch (error) {
+    // in case of unknow server error
     return res.status(500).json({ success: false, message: "Server error", error: error.message })
   }
   
 };
 
+
+/**
+ * Login a user with email and password
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 const login = async (req, res)=>{
+  // #swagger.summary = 'User login'
+  // #swagger.tags = ['authentication']
+  // #swagger.description = 'Login with email and password to receive JWT access token and refresh token cookie.'
+  /* #swagger.parameters['body'] = {
+      in: 'body',
+      required: true,
+      schema: {
+      email: 'john@example.com',
+      password: '123456'
+      }
+  }*/
+  /* #swagger.responses[200] = {
+      description: 'User logged in successfully',
+      schema: { 
+        success: true,
+        message: 'user loggedin',
+        data: { id: 1, username: 'johnDoe' },
+        token: 'jwt token',
+        expiresAt: 'token expiry timestamp'
+      }
+  } */
+  /* #swagger.responses[401] = {
+       description: 'Incorrect email or password',
+       schema: { success: false, message: 'incorrect email or password' }
+  }*/
+  /* #swagger.responses[404] = {
+       description: 'User not found',
+       schema: { success: false, message: 'user not found please register first' }
+  } */
+  /* #swagger.responses[500] = {
+       description: 'Login failed due to server error or other operational erros',
+       schema: { success: false, message: 'login failed' }
+  } */
   try {
     const {email, password} = req.body;
 
@@ -159,7 +257,7 @@ const login = async (req, res)=>{
 
 
 
-      return res.status(401).json({success: false, message: "login failed", data: []})
+      return res.status(500).json({success: false, message: "login failed", data: []})
     }
 
     return res.status(404).json({ success: false, message: 'user not found please register first'});
@@ -172,13 +270,31 @@ const login = async (req, res)=>{
 
 
 // validate token from frontend
+/**
+ * @route Post / validateToken
+ * @param {Request} req - Express request object (expects json token )
+ * @param {Response} res - Express response object
+ * @returns {JSON} - Sends JSON response with success status and token or error message
+ */
 const validateToken = async (req, res) => {
+  // #swagger.summary = 'Validate JWT token'
+  // #swagger.tags = ['authentication']
+  // #swagger.security = [{ "bearerAuth": []}]
+  // #swagger.description = 'Validate the access token sent from frontend'
+  
+  /* #swagger.responses[200] = {
+      description: 'Token is valid',
+      schema: { success: true,message: 'Token is valid' }
+  } */
+  /* #swagger.responses[500] = {
+      description: 'Token validation failed due to server error',
+      schema: { success: false, message: 'Something went wrong during token validation', error: 'Error message' }
+  } */
   try{
 
     return res.status(200).json({
         success: true,
         message: "Token is valid",
-        // user: {id: req.user.id, username: req.user.username},
     })
 
   }catch(error){
@@ -191,7 +307,55 @@ const validateToken = async (req, res) => {
 }
 
 // refresh token route
+/**
+ * Refresh access token using the refresh token stored in cookies.
+ * 
+ * This endpoint verifies the refresh token, checks its validity and expiration,
+ * then issues a new access token if everything is valid.
+ * 
+ * Possible responses:
+ * - 200: New access token successfully generated.
+ * - 401: No refresh token provided in cookies.
+ * - 403: Refresh token is invalid or expired.
+ * - 404: User associated with refresh token not found.
+ * - 500: Server error during token refresh.
+ * 
+ * @route POST/ refreshToken
+ * @param {Request} req - Express request object (expects cookie 'refreshToken')
+ * @param {Response} res - Express response object
+ * @returns {JSON} Sends JSON response with success status and token or error message
+ */
 const refreshToken = async (req, res) => {
+  // #swagger.summary = 'Refresh access token'
+  // #swagger.tags = ['authentication']
+  /* #swagger.parameters['cookie'] = {
+      in: 'cookie',
+      name: 'refreshToken',
+      required: true,
+      type: 'string',
+      description: 'Refresh token stored in HTTP-only cookie'
+   } */
+  // #swagger.description = 'Generate a new access token using a valid refresh token stored in cookies'
+  /* #swagger.responses[200] = {
+      description: 'New access token generated successfully',
+      schema: { success: true, message: 'token refreshed', token: 'new_access_token_string' }
+  } */
+  /* #swagger.responses[401] = {
+      description: 'No refresh token provided',
+      schema: { success: false, message: 'No refresh token provided' }
+  } */
+  /* #swagger.responses[403] = {
+      description: 'Invalid or expired refresh token',
+      schema: { success: false, message: 'Invalid refresh token / Refresh token expired' }
+  } */
+  /* #swagger.responses[404] = {
+      description: 'User associated with refresh token not found',
+      schema: { success: false, message: 'User not found' }
+  } */
+  /* #swagger.responses[500] = {
+      description: 'Server error during token refresh',
+      schema: { success: false, message: 'Server error' }
+  } */
   try {
     const refreshTokenFromCookie = req.cookies.refreshToken;
 
@@ -249,13 +413,55 @@ const refreshToken = async (req, res) => {
 
 
 // loggout route
-
+/**
+ * Logs out the user by:
+ * - Clearing the refresh token cookie
+ * - Deleting the refresh token from the database
+ * - Removing the user's active sessions
+ * 
+ * @route POST /logout
+ * @access Private (Requires valid access token via middleware)
+ * @returns {Object} JSON response indicating success or failure
+ */
 const logout = async (req, res) => {
-    try{
+  // #swagger.summary = 'Logout user'
+  // #swagger.tags = ['authentication']
+  // #swagger.description = 'Clears refresh token cookie, deletes refresh token from DB, and removes user session.'
+  // #swagger.security = [{ "bearerAuth": []}]
+  /* #swagger.parameters['cookie'] = {
+      in: 'cookie',
+      name: 'refreshToken',
+      required: true,
+      type: 'string',
+      description: 'Refresh token stored in HTTP-only cookie'
+   } */
+  /* #swagger.responses[200] = {
+      description: 'User logged out successfully',
+      schema: { success: true, message: 'logged out' }
+  } */
+
+  /* #swagger.responses[400] = {
+      description: 'No refresh token found in cookie',
+      schema: { success: false, message: 'no refresh token found' }
+  } */
+
+  /* #swagger.responses[401] = {
+      description: 'User ID not found or no session found in DB',
+      schema: { success: false, message: 'user id not found / no session found'}
+  } */
+
+  /* #swagger.responses[500] = {
+      description: 'Internal server error during logout process',
+      schema: { success: false, message: 'Something went wrong during logout', error: 'error message' }
+  } */
+
+
+  try{
 
       // get the refresh token from browser
       const refreshToken = req.cookies.refreshToken
 
+      // if no refreshToken received from browser
       if(!refreshToken){
         return res.status(400).json({success: false, message: "no refresh token found"})
       }
@@ -310,14 +516,14 @@ const logout = async (req, res) => {
         message: "no session found",
       })
 
-    }catch(error){
+  }catch(error){
       // in case of error
       return res.status(500).json({
       success: false,
       message: "Something went wrong during logout",
       error: error.message
       })
-    }
+  }
 }
 
 
