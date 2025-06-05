@@ -24,7 +24,7 @@ const generateJwtToken = async (id, username ) => {
       const expiresInSeconds = 10 * 60;
       const expiresAt = new Date((Date.now() + expiresInSeconds * 1000));
      // jwt.sign(payload, secretkey)
-      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: '1m'});
+      const token = jwt.sign( {id, username} , process.env.JWT_SECRET_KEY, {expiresIn: expiresInSeconds});
 
       // adding the token to sessions table
       const insertTokenQuery = "INSERT INTO sessions(user_id, token, expires_at) values($1,$2,$3) RETURNING*";

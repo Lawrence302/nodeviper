@@ -1,6 +1,7 @@
 
 import pool from "../model/db.js";
 
+/*
 const getUsers = async (req, res) => {
   // #swagger.summary = " get list of all users"
   // #swagger.tags = ['admin']
@@ -47,3 +48,5 @@ const resetLeaderboard = async (req, res) => {
 
 
 export {getUsers, deleteUser, resetLeaderboard};
+
+*/
