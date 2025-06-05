@@ -6,7 +6,7 @@ import { registerUIEvents, gameOverUIEvent } from "./components/modals.js";
 const navLoginButton = document.getElementById('nav-login-button')
 const navLogoutButton = document.getElementById('nav-logout-button')
 const navLeaderBoardButton = document.getElementById('nav-leaderboard-button')
-const usernameDispay = document.getElementById('username-display')
+const usernameDisplay = document.getElementById('username-display')
 const levelSpan = document.getElementById("level-value");
 const board = document.querySelector(".board");
 
@@ -410,10 +410,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 storedUser.token = validateToken.token
                 localStorage.setItem('user', JSON.stringify(storedUser))
                 
-                console.log("token refreshed")
+                // console.log("token refreshed")
 
                 // display user name
-                usernameDispay.textContent = capitalize(storedUser.username);
+                usernameDisplay.textContent = capitalize(storedUser.username);
 
                 // update ui in case user is logged in
                 navLoginButton.classList.add('hidden')
@@ -435,36 +435,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                    
         }
     }catch (error) {
-        console.error("Failed to parse user from localstorage: ", error)
-    }
-
-   
+        // console.error("Failed to parse user from localstorage: ", "here ", error) 
         
-    
-    // getting guest users information
-    let guestUser = JSON.parse(localStorage.getItem('guest'));
+        // getting guest users information
+        let guestUser = JSON.parse(localStorage.getItem('guest'));
 
-    // in case there is no guest user found
-    if (!guestUser){
+        // in case there is no guest user found
+        if (!guestUser){
 
-        // initialize new guest info
-        const guestInfo = {
-            id: 'guest_'+ Date.now(),
-            username : 'Guest User',
-            highScore: 0
+            // initialize new guest info
+            const guestInfo = {
+                id: 'guest_'+ Date.now(),
+                username : 'Guest User',
+                highScore: 0
+            }
+
+            //creating new guest user
+            localStorage.setItem('guest', JSON.stringify(guestInfo))
+
+
+            return
         }
 
-        //creating new guest user
-        localStorage.setItem('guest', JSON.stringify(guestInfo))
+        // show the username on the game screen
+        usernameDisplay.textContent = guestUser.username;
 
-
-        return
     }
-
-    // show the username on the game screen
-    usernameDispay.textContent = guestUser.username;
-
-    
 })
 
  // a function to make the first letter of a string to be in caps and the rest in lowercase

@@ -402,7 +402,7 @@ export async function validateUserToken(token){
         if( !valResponse.ok && valResponse.status === 401 && valData.message === 'Token expired'){
 
             
-                console.log("user token expired")
+                // console.log("user token expired")
                // try refreshing the token
                 const newToken = await refreshUserToken()
                 // if token refrsh is a success
@@ -411,7 +411,7 @@ export async function validateUserToken(token){
                         success: false,
                     }
                 }
-                console.log("new token generated.. ")
+                // console.log("new token generated.. ")
 
                 // returns sucess respond
                 return {
@@ -488,7 +488,7 @@ export async function logoutUser(token){
        
     }catch(error){
 
-        console.log(" see the type of error : ", error)
+        // console.log(" see the type of error : ", error)
         // in case logout failed due to unknow error
         throw error
     }
