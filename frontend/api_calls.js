@@ -13,26 +13,25 @@ export async function getUserScores(id){
 
         const validateToken = await validateUserToken(token);
 
-        if(validateToken.success){
-
+        if (!validateToken.success) throw new Error("Token invalid");
+     
+        const res = await fetch(`${API_BASE}/score/${id}`,{
+            method: 'GET',
+            credentials: 'include',
+            headers:{
+                'content-type':'application/json',
+                'Authorization': `Bearer ${validateToken.token}`
+            },
+            
+        })
         
-            const res = await fetch(`${API_BASE}/score/${id}`,{
-                method: 'GET',
-                credentials: 'include',
-                headers:{
-                    'content-type':'application/json',
-                    'Authorization': `Bearer ${validateToken.token}`
-                },
-                
-            })
-           
-            const data = await res.json()
-            return {
-                status : res.status,
-                ok : res.ok,
-                ...data
-            }
+        const data = await res.json()
+        return {
+            status : res.status,
+            ok : res.ok,
+            ...data
         }
+    
        
     } catch (error) {
        
