@@ -1,20 +1,38 @@
-# NodeViper
+# NodeViper 🐍
+**Created by [Ganjer Lawrence](https://github.com/lawrence302)**
 
-NodeViper is a backend REST API built with Node.js and Express for managing game scores, user authentication, and leaderboards. It provides endpoints for user registration, login, score submission, and leaderboard retrieval. The API uses JWT authentication for securing endpoints.
+NodeViper is a **full-stack game application** that combines a dynamic frontend with a robust Node.js + Express backend. The application allows players to compete by submitting scores, tracking progress, and viewing live leaderboards. It includes secure user authentication using JWT and provides a RESTful API for managing users, scores, and leaderboard data.
 
----
+The backend handles user registration, login, score submissions, and leaderboard management. The frontend (built with HTML/tailwind css/JavaScript) presents an engaging interface for playing the game and visualizing stats.
+## Frontend
+
+The frontend is a simple yet responsive game interface built using **HTML**, **Tailwind CSS**, and **Vanilla JavaScript**. It communicates with the backend API for user authentication, score tracking, and leaderboard updates.
+
+### How to Run Frontend
+
+1. Navigate to the `frontend/` directory (or wherever your HTML files are located).
+2. Open `index.html` in your browser directly, **or**
+3. Use a local server (e.g., Live Server extension in VS Code) for better development experience.
+
+> ⚠️ **Note:** Ensure that API calls in your frontend JavaScript correctly target the backend base URL (e.g., `http://localhost:3000`).
 
 ## Features
 
-- User registration and login with JWT authentication
-- Refresh token, logout, and token validation endpoints
-- Add and update user game scores with automatic level calculation
-- Retrieve user scores and highest score
-- Get global leaderboard ranked by highest scores
+- 🎮 Game interface with real-time score tracking
+- 🔐 User authentication with JWT
 - Secure routes with middleware authentication
-- PostgreSQL database integration for persistent storage
+- 📊 Leaderboard ranked by highest score
+- 🧠 Score history and level logic validation
+- 📡 REST API with Swagger documentation
+- 💾 PostgreSQL database integration
 
----
+## Technologies
+
+- Backend: Node.js, Express.js, PostgreSQL
+- Frontend: HTML, CSS, JavaScript
+- Auth: JWT
+- Documentation: Swagger
+
 
 ## Table of Contents
 
