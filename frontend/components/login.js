@@ -211,13 +211,13 @@ export function register(){
             return;
         }
         
-        const userName = userNameInput.value.trim()
+        const username = userNameInput.value.trim()
         const email = userEmailInput.value.trim();
         const password = userPasswordInput.value.trim();
         const confirmPassword = userConfirmedPasswordInput.value.trim();
 
         // user input vallidation
-        if (userName === "" || email === '' || password === '' || confirmPassword === ''){
+        if (username === "" || email === '' || password === '' || confirmPassword === ''){
             loginError.textContent = "All fields are required"
             return
         }
@@ -238,7 +238,7 @@ export function register(){
         /**
          * peforming user registration process
          */
-        registerUser({email, password, confirmPassword})
+        registerUser({username, email, password, confirmPassword})
         .then((response) => {
 
             // if registration is successful
