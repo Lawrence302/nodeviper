@@ -254,8 +254,8 @@ const restartGame = () => {
     snakeBody = [{x:1, y:1}]
     direction = {x:0, y:0}
     updateScore();
-    level = 0
-    levelSpan.textContent = 0;
+    level = 1
+    levelSpan.textContent = level;
 }
 
 //DrawFood()
@@ -310,7 +310,7 @@ const updateScore = () => {
 
     // check and update the level
     level = Math.min(1 + Math.floor((snakeBody.length - 3) / 20), 10);
-
+    levelSpan.textContent = level
     if (scoreDive){
         scoreDive.textContent = score;
     }
