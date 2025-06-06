@@ -20,7 +20,8 @@ const PORT = process.env.PORT || 5000
 
 
 app.use(cors({
-    origin: ['https://nodeviper.onrender.com', 'http://127.0.0.1:5500'],
+    // origin: ['https://nodeviper.onrender.com', 'http://127.0.0.1:5500'],
+    origin: 'https://nodeviper.onrender.com',
     credentials: true
 }));
 

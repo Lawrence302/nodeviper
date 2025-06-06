@@ -388,7 +388,7 @@ export async function validateUserToken(token){
     try{
 
         // sending validate request to backend
-        const valResponse = await fetch(`https://localhost:3000/validate`, {
+        const valResponse = await fetch(`${API_BASE}validate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

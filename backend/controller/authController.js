@@ -134,15 +134,29 @@ const register = async (req, res) => {
       // if the token generation was successful
       if (tokenGeneration.success){
         
-        // sucessfull response sent
-        return res.status(201).json(
-          { 
-            success : true,
-            message: 'Registration success',
-             data: {id, username},
-             token: tokenGeneration.token 
-          }
-        );
+        // generate refresh token
+        const refreshToken = crypto.randomBytes(64).toString('hex');
+        const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        // store in DB
+        const storeRefreshTokenQuery = "INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES($1, $2, $3)";
+        await pool.query(storeRefreshTokenQuery, [id, refreshToken, expires_at]);
+
+        // set refresh token cookie
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: 'Registration success',
+          data: { id, username },
+          token: tokenGeneration.token,
+          expiresAt: tokenGeneration.expiresAt,
+        });
       }
 
       // if there was an error generating token 
