@@ -1,5 +1,7 @@
 
-const API_BASE = 'https://localhost:3000';
+const API_BASE =  window.location.hostname === 'localhost'
+  ? 'https://localhost:3000'
+  : 'https://nodeviper-backend.onrender.com';
 
 
 export async function getUserScores(id){
